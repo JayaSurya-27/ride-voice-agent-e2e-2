@@ -1,7 +1,8 @@
 -- Uber ride-booking voice agent — schema mirrors §3a of the prompt package.
 -- Every fare/ETA/availability the agent speaks must come from here via a tool.
 
-DROP TABLE IF EXISTS bookings, wallets, users, products, market_config, places CASCADE;
+DROP TABLE IF EXISTS bookings, otp_codes, wallets, payment_methods, users, products,
+    market_config, places CASCADE;
 
 -- §3a users
 CREATE TABLE users (
@@ -17,6 +18,18 @@ CREATE TABLE users (
     preferred_language  TEXT NOT NULL DEFAULT 'en',
     business_profile_id TEXT,
     accessibility_needs TEXT[] DEFAULT '{}'            -- e.g. {wav}
+);
+
+-- §3a payment_methods — NO full PAN is ever stored or spoken
+CREATE TABLE payment_methods (
+    id          TEXT PRIMARY KEY,
+    rider_id    TEXT NOT NULL REFERENCES users(rider_id) ON DELETE CASCADE,
+    type        TEXT NOT NULL,   -- card|paypal|applepay|googlepay|uber_cash|business
+    brand       TEXT,
+    last4       TEXT,
+    is_default  BOOLEAN NOT NULL DEFAULT FALSE,
+    is_valid    BOOLEAN NOT NULL DEFAULT TRUE,
+    is_expired  BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE wallets (
@@ -75,3 +88,14 @@ CREATE TABLE bookings (
     idempotency_key    TEXT UNIQUE,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- OTP step-up (§7). Code is fixed in seed for demo determinism.
+CREATE TABLE otp_codes (
+    phone         TEXT PRIMARY KEY,
+    code          TEXT NOT NULL,
+    attempts_left INT  NOT NULL DEFAULT 3,
+    verified      BOOLEAN NOT NULL DEFAULT FALSE,
+    issued_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ON payment_methods (rider_id);

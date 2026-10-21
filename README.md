@@ -8,7 +8,8 @@ The application code, prompt, transactional state, tools API, fares, rider data 
 Postgres database all run on your machine. LiveKit Cloud remains the media and SIP
 control plane, and Deepgram plus Gemini remain model providers.
 
-This version books new rides only, and Uber Cash is the only payment method.
+This version books new rides only. Payment is a saved card, after an SMS code is
+verified in the call, or Uber Cash.
 
 ## Required secrets
 
@@ -32,15 +33,18 @@ Never commit `.env.local`.
 - Pickup and destination must each be geocoded and explicitly confirmed.
 - Fares, availability, surge, and pickup ETAs only come from the tools API.
 - Changing an address invalidates the quote, payment choice, and consent token.
-- Uber Cash must cover the high end of the quote; no other payment method is accepted.
+- Saved cards require a successful OTP in the current call.
+- Uber Cash must cover the high end of the quote.
 - Booking requires a one-time token tied to the exact trip read-back and an
   explicit affirmative response.
 - Booking writes are idempotent.
+- The database stores only card brand and last four digits, never PAN or CVV.
 
 ## Tools
 
 `geocode_address`, `confirm_address`, `get_ride_options`, `select_ride_option`,
-`get_payment_methods` (Uber Cash balance), `select_payment_method`,
+`get_payment_methods` (saved cards and Uber Cash balance), `send_otp`, `verify_otp`,
+`select_payment_method`,
 `prepare_booking_confirmation`, `book_ride`, `transfer_to_human`.
 
 ## Quick start
@@ -76,7 +80,8 @@ API key, and a Gemini API key.
    ```
 
    `DEMO_CALLER_ANI` chooses the seeded caller because console sessions have no
-   SIP caller-ID attribute. The default is Dana (`+14155550101`).
+   SIP caller-ID attribute. The default is Dana (`+14155550101`). Each seeded
+   rider has a fixed demo OTP in `db/seed.sql` (Dana's is `638204`).
 
 5. Run the worker for rooms or telephony:
 
@@ -94,8 +99,8 @@ API key, and a Gemini API key.
 
 | Caller | Expected path |
 |---|---|
-| `+14155550101` Dana | Uber Cash 60.00; books most city trips |
-| `+14155550102` Marcus | Uber Cash 65.00 |
+| `+14155550101` Dana | Valid saved Visa; OTP required. Uber Cash 60.00 |
+| `+14155550102` Marcus | Expired card; Uber Cash 65.00 can cover many trips |
 | `+14155550103` Priya | Suspended; booking rejected and human handoff offered |
 | `+14155550105` Maya | Uber Cash 6.25; balance too low for most trips |
 | Any other number | No account; no booking, transfer offered |

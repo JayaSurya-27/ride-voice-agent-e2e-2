@@ -18,11 +18,13 @@ AddressKind = Literal["pickup", "dropoff"]
 class BookingState:
     caller_ani: str
     session_id: str
+    auth_level: str = "anonymous"
     rider_id: str | None = None
     first_name: str | None = None
     rider_status: str = "unknown"
     default_market: str | None = None
     accessibility_needs: list[str] = field(default_factory=list)
+    payment_methods: list[dict[str, Any]] = field(default_factory=list)
     uber_cash_balance: float = 0.0
     candidates: dict[str, list[dict[str, Any]]] = field(
         default_factory=lambda: {"pickup": [], "dropoff": []}
@@ -49,6 +51,7 @@ class BookingState:
         self.rider_status = identity.get("status") or "unknown"
         self.default_market = identity.get("default_market")
         self.accessibility_needs = identity.get("accessibility_needs") or []
+        self.auth_level = "ani_matched" if self.rider_id else "anonymous"
 
     def remember_geocode(
         self, address_kind: AddressKind, candidates: list[dict[str, Any]]
@@ -103,10 +106,23 @@ class BookingState:
         self.ensure_bookable()
         if not self.selected_option:
             raise GuardError("Select a quoted ride option before payment.")
-        if payment_method != "uber_cash":
-            raise GuardError("Only Uber Cash is supported.")
-        if self.uber_cash_balance < float(self.selected_option["fare_high"]):
-            raise GuardError("The Uber Cash balance does not cover the high fare estimate.")
+        high = float(self.selected_option["fare_high"])
+        if payment_method.startswith("saved_card:"):
+            method_id = payment_method.partition(":")[2]
+            method = next(
+                (m for m in self.payment_methods if m.get("id") == method_id), None
+            )
+            if not method or not method.get("is_valid") or method.get("is_expired"):
+                raise GuardError("That saved payment method is not valid.")
+            if self.auth_level != "otp_verified":
+                raise GuardError("A successful OTP check is required for a saved card.")
+        elif payment_method == "uber_cash":
+            if self.uber_cash_balance < high:
+                raise GuardError(
+                    "The Uber Cash balance does not cover the high fare estimate."
+                )
+        else:
+            raise GuardError("Unsupported payment method.")
         self.payment_method_selected = payment_method
         self._clear_confirmation()
 
@@ -160,7 +176,12 @@ class BookingState:
         self._clear_confirmation()
 
     def _payment_label(self) -> str:
-        return (self.payment_method_selected or "unknown").replace("_", " ")
+        selected = self.payment_method_selected or "unknown"
+        if selected.startswith("saved_card:"):
+            method_id = selected.partition(":")[2]
+            method = next((m for m in self.payment_methods if m.get("id") == method_id), {})
+            return f"{method.get('brand', 'card')} ending {method.get('last4', 'unknown')}"
+        return selected.replace("_", " ")
 
     def _invalidate_quote(self) -> None:
         self.quote = None

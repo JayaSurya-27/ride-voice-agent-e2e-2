@@ -64,6 +64,16 @@ def test_seeded_uber_cash_booking_is_idempotent() -> None:
         wallet = post(client, "get_payment_methods", {"rider_id": rider["rider_id"]})
         assert wallet["uber_cash_balance"] == 60.0
         assert wallet["uber_cash_balance"] >= uberx["fare_high"]
+        visa = next(m for m in wallet["methods"] if m["id"] == "pm_dana_visa")
+        assert visa["is_default"] is True
+
+        post(client, "send_otp", {"phone": "+14155550101"})
+        otp = post(
+            client,
+            "verify_otp",
+            {"phone": "+14155550101", "code": "638204"},
+        )
+        assert otp["verified"] is True
 
         key = f"integration-{uuid.uuid4()}"
         booking_payload = {
@@ -80,6 +90,13 @@ def test_seeded_uber_cash_booking_is_idempotent() -> None:
         second = post(client, "book_ride", booking_payload)
         assert first["status"] == "matched"
         assert first["booking_ref"] == second["booking_ref"]
+
+        card_payload = {
+            **booking_payload,
+            "payment_method": "saved_card:pm_dana_visa",
+            "idempotency_key": f"integration-{uuid.uuid4()}",
+        }
+        assert post(client, "book_ride", card_payload)["status"] == "matched"
 
         unsupported = client.post(
             "/book_ride", json={**booking_payload, "payment_method": "cash"}

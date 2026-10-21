@@ -60,11 +60,39 @@ def test_uber_cash_must_cover_high_quote() -> None:
     assert state.payment_method_selected == "uber_cash"
 
 
-def test_only_uber_cash_is_supported() -> None:
+def test_saved_card_requires_otp() -> None:
+    state = ready_state()
+    state.payment_methods = [
+        {
+            "id": "pm_visa",
+            "type": "card",
+            "is_valid": True,
+            "is_expired": False,
+        }
+    ]
+    with pytest.raises(GuardError, match="OTP"):
+        state.select_payment("saved_card:pm_visa")
+
+    state.auth_level = "otp_verified"
+    state.select_payment("saved_card:pm_visa")
+    assert state.payment_method_selected == "saved_card:pm_visa"
+
+
+def test_expired_saved_card_is_rejected() -> None:
+    state = ready_state()
+    state.auth_level = "otp_verified"
+    state.payment_methods = [
+        {"id": "pm_mc", "type": "card", "is_valid": False, "is_expired": True}
+    ]
+    with pytest.raises(GuardError, match="not valid"):
+        state.select_payment("saved_card:pm_mc")
+
+
+def test_unsupported_payment_methods_are_rejected() -> None:
     state = ready_state()
     state.uber_cash_balance = 100
-    for method in ("cash", "pay_link", "saved_card:pm_visa"):
-        with pytest.raises(GuardError, match="Only Uber Cash"):
+    for method in ("cash", "pay_link"):
+        with pytest.raises(GuardError, match="Unsupported payment method"):
             state.select_payment(method)
 
 

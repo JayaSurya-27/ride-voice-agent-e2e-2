@@ -14,7 +14,7 @@ def test_prompt_contains_non_negotiable_voice_and_booking_rules() -> None:
     for required in (
         "one question at a time",
         "Never invent",
-        "Uber Cash is the only payment method",
+        "Never ask for or accept a full card number",
         "prepare_booking_confirmation",
         "explicit yes",
         "transfer_to_human",

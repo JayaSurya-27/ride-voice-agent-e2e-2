@@ -63,6 +63,11 @@ class PhoneIn(BaseModel):
     phone: str = Field(pattern=r"^\+[1-9]\d{7,14}$")
 
 
+class OtpIn(BaseModel):
+    phone: str
+    code: str
+
+
 @app.get("/health")
 def health() -> dict:
     try:
@@ -88,6 +93,38 @@ def lookup_rider_by_phone(body: PhoneIn) -> dict:
         "business_profile_id": u["business_profile_id"],
         "accessibility_needs": u["accessibility_needs"] or [],
     }
+
+
+@app.post("/send_otp")
+def send_otp(body: PhoneIn) -> dict:
+    exists = one("SELECT 1 FROM otp_codes WHERE phone = %s", (body.phone,))
+    if exists:
+        run(
+            "UPDATE otp_codes SET attempts_left = 3, verified = FALSE,"
+            " issued_at = now() WHERE phone = %s",
+            (body.phone,),
+        )
+    else:
+        run(
+            "INSERT INTO otp_codes (phone, code) VALUES (%s, '123456')",
+            (body.phone,),
+        )
+    return {"otp_sent": True, "channel": "sms"}
+
+
+@app.post("/verify_otp")
+def verify_otp(body: OtpIn) -> dict:
+    row = one("SELECT * FROM otp_codes WHERE phone = %s", (body.phone,))
+    if not row:
+        return {"verified": False, "attempts_left": 0}
+    if row["attempts_left"] <= 0:
+        return {"verified": False, "attempts_left": 0}
+    if body.code.strip().replace(" ", "") == row["code"]:
+        run("UPDATE otp_codes SET verified = TRUE WHERE phone = %s", (body.phone,))
+        return {"verified": True, "attempts_left": row["attempts_left"]}
+    left = row["attempts_left"] - 1
+    run("UPDATE otp_codes SET attempts_left = %s WHERE phone = %s", (left, body.phone))
+    return {"verified": False, "attempts_left": left}
 
 
 # ------------------------------------------------------------------ places
@@ -224,12 +261,19 @@ class RiderIn(BaseModel):
 
 @app.post("/get_payment_methods")
 def get_payment_methods(body: RiderIn) -> dict:
-    """Uber Cash is the only payment method."""
     u = one("SELECT * FROM users WHERE rider_id = %s", (body.rider_id,))
     if not u:
         raise HTTPException(404, "unknown_rider")
     w = one("SELECT * FROM wallets WHERE rider_id = %s", (body.rider_id,))
-    return {"uber_cash_balance": _f(w["uber_cash_balance"]) if w else 0.0}
+    methods = many(
+        "SELECT id, type, brand, last4, is_default, is_valid, is_expired"
+        " FROM payment_methods WHERE rider_id = %s ORDER BY is_default DESC",
+        (body.rider_id,),
+    )
+    return {
+        "methods": methods,
+        "uber_cash_balance": _f(w["uber_cash_balance"]) if w else 0.0,
+    }
 
 
 # ----------------------------------------------------------------- booking
@@ -248,7 +292,9 @@ class BookIn(BaseModel):
 
 @app.post("/book_ride")
 def book_ride(body: BookIn) -> dict:
-    if body.payment_method != "uber_cash":
+    if body.payment_method != "uber_cash" and not body.payment_method.startswith(
+        "saved_card:"
+    ):
         raise HTTPException(422, "unsupported_payment_method")
     if body.quoted_fare_low < 0 or body.quoted_fare_high < body.quoted_fare_low:
         raise HTTPException(422, "invalid_fare_range")

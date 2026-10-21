@@ -130,21 +130,43 @@ class RideBookingAgent(Agent):
 
     @function_tool()
     async def get_payment_methods(self) -> dict:
-        """Get the caller's Uber Cash balance, the only supported payment method."""
+        """Get safe saved-card metadata and the Uber Cash balance; never returns full card details."""
         if not self.state.rider_id:
-            return {"uber_cash_balance": 0}
+            return {"methods": [], "uber_cash_balance": 0}
         try:
             result = await self.client.call(
                 "get_payment_methods", rider_id=self.state.rider_id
             )
+            self.state.payment_methods = result.get("methods", [])
             self.state.uber_cash_balance = float(result.get("uber_cash_balance", 0))
             return result
         except Exception as exc:
             raise _tool_error(exc) from exc
 
     @function_tool()
+    async def send_otp(self) -> dict:
+        """Send an SMS verification code to the caller before using a saved card."""
+        try:
+            return await self.client.call("send_otp", phone=self.state.caller_ani)
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
+    async def verify_otp(self, code: str) -> dict:
+        """Verify the caller's SMS code. Never infer or guess a code."""
+        try:
+            result = await self.client.call(
+                "verify_otp", phone=self.state.caller_ani, code=code
+            )
+            if result.get("verified"):
+                self.state.auth_level = "otp_verified"
+            return result
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
     async def select_payment_method(self, payment_method: str) -> dict:
-        """Select uber_cash after checking the balance covers the high fare estimate."""
+        """Select saved_card:<id> or uber_cash after explaining it."""
         try:
             self.state.select_payment(payment_method)
             if self.client.harness_mode:
