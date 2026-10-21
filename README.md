@@ -8,8 +8,9 @@ The application code, prompt, transactional state, tools API, fares, rider data 
 Postgres database all run on your machine. LiveKit Cloud remains the media and SIP
 control plane, and Deepgram plus Gemini remain model providers.
 
-This version books new rides only. A ride is paid with Uber Cash, or with a saved
-card once the caller has confirmed an SMS code during the call.
+This version books new rides, checks a booked ride's status ("where's my driver"),
+and cancels a ride after stating the cancellation fee. A ride is paid with Uber
+Cash, or with a saved card once the caller has confirmed an SMS code during the call.
 
 ## Required secrets
 
@@ -38,6 +39,7 @@ Never commit `.env.local`.
 - Booking requires a one-time token tied to the exact trip read-back and an
   explicit affirmative response.
 - Booking writes are idempotent.
+- Cancelling requires the caller's explicit yes after the fee is disclosed.
 - The database stores only card brand and last four digits, never PAN or CVV.
 
 ## Tools
@@ -45,7 +47,8 @@ Never commit `.env.local`.
 `geocode_address`, `confirm_address`, `get_ride_options`, `select_ride_option`,
 `get_payment_methods` (saved cards and Uber Cash balance), `send_otp`, `verify_otp`,
 `select_payment_method`,
-`prepare_booking_confirmation`, `book_ride`, `transfer_to_human`.
+`prepare_booking_confirmation`, `book_ride`, `get_booking_status`,
+`get_cancellation_quote`, `cancel_ride`, `transfer_to_human`.
 
 ## Quick start
 
@@ -100,7 +103,7 @@ API key, and a Gemini API key.
 | Caller | Expected path |
 |---|---|
 | `+14155550101` Dana | Valid saved Visa; OTP required. Uber Cash 60.00 |
-| `+14155550102` Marcus | Expired card; Uber Cash 65.00 can cover many trips |
+| `+14155550102` Marcus | Expired card; Uber Cash 65.00 can cover many trips. Active ride `UB7F3A2C91` (driver Lena) for status and cancel; fee 5.00 |
 | `+14155550103` Priya | Suspended; booking rejected and human handoff offered |
 | `+14155550105` Maya | Uber Cash 6.25; balance too low for most trips |
 | Any other number | No account; no booking, transfer offered |

@@ -82,6 +82,12 @@ def lookup_rider_by_phone(body: PhoneIn) -> dict:
     u = one("SELECT * FROM users WHERE phone = %s", (body.phone,))
     if not u:
         return {"rider_id": None, "first_name": None, "status": "unknown"}
+    active_booking = one(
+        "SELECT booking_ref FROM bookings"
+        " WHERE rider_id = %s AND status NOT IN ('cancelled', 'completed')"
+        " ORDER BY created_at DESC LIMIT 1",
+        (u["rider_id"],),
+    )
     return {
         "rider_id": u["rider_id"],
         "first_name": u["first_name"],
@@ -92,6 +98,7 @@ def lookup_rider_by_phone(body: PhoneIn) -> dict:
         "preferred_language": u["preferred_language"],
         "business_profile_id": u["business_profile_id"],
         "accessibility_needs": u["accessibility_needs"] or [],
+        "booking_ref": active_booking["booking_ref"] if active_booking else None,
     }
 
 
@@ -355,8 +362,8 @@ def book_ride(body: BookIn) -> dict:
         "INSERT INTO bookings (booking_ref, rider_id, pickup_place_id,"
         " dropoff_place_id, product_id, payment_method, quoted_fare_low,"
         " quoted_fare_high, status, driver_name, vehicle, plate, eta_pickup_min,"
-        " idempotency_key) VALUES"
-        " (%s,%s,%s,%s,%s,%s,%s,%s,'matched',%s,%s,%s,%s,%s)",
+        " cancellation_fee, idempotency_key) VALUES"
+        " (%s,%s,%s,%s,%s,%s,%s,%s,'matched',%s,%s,%s,%s,5.00,%s)",
         (
             ref,
             body.rider_id,
@@ -380,6 +387,49 @@ def book_ride(body: BookIn) -> dict:
         "vehicle": vehicle,
         "plate": plate,
         "eta_pickup_min": eta,
+    }
+
+
+class RefIn(BaseModel):
+    booking_ref: str
+    reason: str | None = None
+
+
+@app.post("/get_booking_status")
+def get_booking_status(body: RefIn) -> dict:
+    b = one("SELECT * FROM bookings WHERE booking_ref = %s", (body.booking_ref,))
+    if not b:
+        raise HTTPException(404, "unknown_booking_ref")
+    return {
+        "status": b["status"],
+        "driver_name": b["driver_name"],
+        "vehicle": b["vehicle"],
+        "plate": b["plate"],
+        "eta_pickup_min": b["eta_pickup_min"],
+    }
+
+
+@app.post("/cancel_ride")
+def cancel_ride(body: RefIn) -> dict:
+    b = one("SELECT * FROM bookings WHERE booking_ref = %s", (body.booking_ref,))
+    if not b:
+        raise HTTPException(404, "unknown_booking_ref")
+    run(
+        "UPDATE bookings SET status = 'cancelled' WHERE booking_ref = %s",
+        (body.booking_ref,),
+    )
+    return {"cancelled": True, "cancellation_fee": _f(b["cancellation_fee"])}
+
+
+@app.post("/get_cancellation_quote")
+def get_cancellation_quote(body: RefIn) -> dict:
+    b = one("SELECT * FROM bookings WHERE booking_ref = %s", (body.booking_ref,))
+    if not b:
+        raise HTTPException(404, "unknown_booking_ref")
+    return {
+        "booking_ref": body.booking_ref,
+        "status": b["status"],
+        "cancellation_fee": _f(b["cancellation_fee"]),
     }
 
 

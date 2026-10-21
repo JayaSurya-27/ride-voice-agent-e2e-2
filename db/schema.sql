@@ -85,6 +85,7 @@ CREATE TABLE bookings (
     vehicle           TEXT,
     plate             TEXT,
     eta_pickup_min    INT,
+    cancellation_fee  NUMERIC(10,2) NOT NULL DEFAULT 0,
     idempotency_key    TEXT UNIQUE,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );

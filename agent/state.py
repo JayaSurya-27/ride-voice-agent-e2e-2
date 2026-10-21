@@ -51,6 +51,7 @@ class BookingState:
         self.rider_status = identity.get("status") or "unknown"
         self.default_market = identity.get("default_market")
         self.accessibility_needs = identity.get("accessibility_needs") or []
+        self.booking_ref = identity.get("booking_ref") or self.booking_ref
         self.auth_level = "ani_matched" if self.rider_id else "anonymous"
 
     def remember_geocode(

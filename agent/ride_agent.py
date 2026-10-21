@@ -227,6 +227,54 @@ class RideBookingAgent(Agent):
             raise _tool_error(exc) from exc
 
     @function_tool()
+    async def get_booking_status(self) -> dict:
+        """Get current driver and pickup status for the booking from this call."""
+        if not self.state.booking_ref and not self.client.harness_mode:
+            raise ToolError("There is no booking in this call yet.")
+        try:
+            result = await self.client.call(
+                "get_booking_status", booking_ref=self.state.booking_ref
+            )
+            self.state.booking_ref = result.get("booking_ref") or self.state.booking_ref
+            return result
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
+    async def get_cancellation_quote(self) -> dict:
+        """Get the cancellation fee to disclose before asking for cancellation consent."""
+        if not self.state.booking_ref and not self.client.harness_mode:
+            raise ToolError("There is no booking in this call yet.")
+        try:
+            result = await self.client.call(
+                "get_cancellation_quote", booking_ref=self.state.booking_ref
+            )
+            self.state.booking_ref = result.get("booking_ref") or self.state.booking_ref
+            return result
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
+    async def cancel_ride(
+        self, context: RunContext, reason: str, caller_explicitly_confirmed: bool
+    ) -> dict:
+        """Cancel after disclosing the fee and receiving an explicit yes."""
+        if not caller_explicitly_confirmed:
+            raise ToolError("The caller must explicitly confirm cancellation.")
+        if not self.state.booking_ref and not self.client.harness_mode:
+            raise ToolError("There is no booking in this call yet.")
+        context.disallow_interruptions()
+        try:
+            return await self.client.call(
+                "cancel_ride",
+                booking_ref=self.state.booking_ref,
+                reason=reason,
+                _trace_payload={"caller_explicitly_confirmed": caller_explicitly_confirmed},
+            )
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
     async def transfer_to_human(self, reason: str) -> dict:
         """Request a human handoff for unsupported, account-blocked, safety, or failed-service cases."""
         try:

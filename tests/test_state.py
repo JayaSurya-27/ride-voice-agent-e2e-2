@@ -145,3 +145,11 @@ def test_active_account_remains_bookable() -> None:
     state = ready_state()
     state.ensure_bookable()
     assert state.selected_product_id == "uberx"
+
+
+def test_identity_carries_active_booking_ref() -> None:
+    state = BookingState(caller_ani="+14155550102", session_id="room-2")
+    state.set_identity(
+        {"rider_id": "rdr_marcus", "status": "active", "booking_ref": "UB7F3A2C91"}
+    )
+    assert state.booking_ref == "UB7F3A2C91"

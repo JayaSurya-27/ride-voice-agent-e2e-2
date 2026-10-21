@@ -17,7 +17,7 @@ def post(client: httpx.Client, name: str, body: dict) -> dict:
     return response.json()
 
 
-def test_seeded_uber_cash_booking_is_idempotent() -> None:
+def test_seeded_booking_flow_is_idempotent_and_cancellable() -> None:
     with httpx.Client(
         base_url=os.environ.get("TOOLS_API_URL", "http://127.0.0.1:18090"),
         timeout=5,
@@ -102,3 +102,27 @@ def test_seeded_uber_cash_booking_is_idempotent() -> None:
             "/book_ride", json={**booking_payload, "payment_method": "cash"}
         )
         assert unsupported.status_code == 422
+
+        cancellation = post(
+            client,
+            "get_cancellation_quote",
+            {"booking_ref": first["booking_ref"]},
+        )
+        assert cancellation["cancellation_fee"] == 5.0
+        cancelled = post(
+            client,
+            "cancel_ride",
+            {"booking_ref": first["booking_ref"], "reason": "integration test"},
+        )
+        assert cancelled["cancelled"] is True
+        status = post(client, "get_booking_status", {"booking_ref": first["booking_ref"]})
+        assert status["status"] == "cancelled"
+
+        marcus = post(client, "lookup_rider_by_phone", {"phone": "+14155550102"})
+        assert marcus["booking_ref"] == "UB7F3A2C91"
+        active = post(client, "get_booking_status", {"booking_ref": "UB7F3A2C91"})
+        assert active["status"] == "matched"
+        assert active["driver_name"] == "Lena"
+
+        missing = client.post("/get_booking_status", json={"booking_ref": "UBNOPE"})
+        assert missing.status_code == 404

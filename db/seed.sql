@@ -1,6 +1,7 @@
 -- Seed data. Payment is a saved card (after OTP) or Uber Cash:
 --   +14155550101 Dana   — known rider, valid default Visa  -> OTP path; Uber Cash 60.00
---   +14155550102 Marcus — known rider, expired card only   -> Uber Cash 65.00
+--   +14155550102 Marcus — known rider, expired card only   -> Uber Cash 65.00;
+--                          active booking UB7F3A2C91 (status / cancel)
 --   +14155550103 Priya  — suspended account            -> must refuse to book
 --   anything else       — unknown number -> no booking, transfer offered
 
@@ -81,3 +82,10 @@ INSERT INTO otp_codes (phone, code) VALUES
   ('+14155550101', '638204'), ('+14155550102', '817463'), ('+14155550103', '264819'),
   ('+14155550105', '804271'), ('+14155550106', '349175'),
   ('+14155550108', '417936'), ('+14155550109', '731905'), ('+919845550104', '286413');
+
+-- Marcus already has a matched ride, so "where's my driver" and cancel can be tested.
+INSERT INTO bookings (booking_ref, rider_id, pickup_place_id, dropoff_place_id, product_id,
+    payment_method, quoted_fare_low, quoted_fare_high, status, driver_name, vehicle, plate,
+    eta_pickup_min, cancellation_fee) VALUES
+  ('UB7F3A2C91', 'rdr_marcus', 'plc_200_market', 'plc_sfo_intl', 'uberx', 'uber_cash',
+   38.00, 46.00, 'matched', 'Lena', 'silver Honda Accord', '7KTR904', 6, 5.00);
