@@ -1,0 +1,19 @@
+{
+  "dispatch_rule": {
+    "rule": {
+      "dispatchRuleIndividual": {
+        "roomPrefix": "uber-call-"
+      }
+    },
+    "name": "Uber booking calls",
+    "hidePhoneNumber": false,
+    "roomConfig": {
+      "agents": [
+        {
+          "agentName": "uber-voice-booking",
+          "metadata": "{\"channel\":\"inbound-phone\"}"
+        }
+      ]
+    }
+  }
+}
