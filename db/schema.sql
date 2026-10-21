@@ -37,7 +37,7 @@ CREATE TABLE wallets (
     uber_cash_balance NUMERIC(10,2) NOT NULL DEFAULT 0
 );
 
--- Geocoding source. geocode_address() searches formatted_address + aliases,
+-- Geocoding source. search_places() searches formatted_address + aliases,
 -- so "the Hilton on Union Square" resolves without a real Places API.
 CREATE TABLE places (
     place_id          TEXT PRIMARY KEY,

@@ -65,7 +65,7 @@ class PhoneIn(BaseModel):
 
 class OtpIn(BaseModel):
     phone: str
-    code: str
+    otp_code: str
 
 
 @app.get("/health")
@@ -128,7 +128,7 @@ def verify_otp(body: OtpIn) -> dict:
         return {"verified": False, "attempts_left": 0}
     if row["attempts_left"] <= 0:
         return {"verified": False, "attempts_left": 0}
-    if body.code.strip().replace(" ", "") == row["code"]:
+    if body.otp_code.strip().replace(" ", "") == row["code"]:
         run("UPDATE otp_codes SET verified = TRUE WHERE phone = %s", (body.phone,))
         return {"verified": True, "attempts_left": row["attempts_left"]}
     left = row["attempts_left"] - 1
@@ -139,17 +139,17 @@ def verify_otp(body: OtpIn) -> dict:
 # ------------------------------------------------------------------ places
 
 
-class GeocodeIn(BaseModel):
-    query: str
+class SearchPlacesIn(BaseModel):
+    text: str
     market: str | None = None
 
 
 # Matches a spoken address against the seeded places only.
-@app.post("/geocode_address")
-def geocode_address(body: GeocodeIn) -> dict:
+@app.post("/search_places")
+def search_places(body: SearchPlacesIn) -> dict:
     """Return ranked candidates. Deliberately returns >1 for ambiguous input
     ("Main Street") so the agent has to disambiguate rather than assume."""
-    q = body.query.strip().lower()
+    q = body.text.strip().lower()
     rows = many("SELECT * FROM places")
     scored: list[tuple[float, dict]] = []
     for r in rows:

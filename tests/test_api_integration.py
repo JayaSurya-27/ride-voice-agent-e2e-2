@@ -39,13 +39,13 @@ def test_seeded_booking_flow_is_idempotent_and_cancellable() -> None:
 
         pickup = post(
             client,
-            "geocode_address",
-            {"query": "Hilton Union Square", "market": "US-SF"},
+            "search_places",
+            {"text": "Hilton Union Square", "market": "US-SF"},
         )["candidates"][0]
         dropoff = post(
             client,
-            "geocode_address",
-            {"query": "SFO international", "market": "US-SF"},
+            "search_places",
+            {"text": "SFO international", "market": "US-SF"},
         )["candidates"][0]
         quote = post(
             client,
@@ -71,7 +71,7 @@ def test_seeded_booking_flow_is_idempotent_and_cancellable() -> None:
         otp = post(
             client,
             "verify_otp",
-            {"phone": "+14155550101", "code": "638204"},
+            {"phone": "+14155550101", "otp_code": "638204"},
         )
         assert otp["verified"] is True
 

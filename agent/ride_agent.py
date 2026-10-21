@@ -54,14 +54,14 @@ class RideBookingAgent(Agent):
         )
 
     @function_tool()
-    async def geocode_address(
-        self, query: str, address_kind: Literal["pickup", "dropoff"]
+    async def search_places(
+        self, text: str, address_kind: Literal["pickup", "dropoff"]
     ) -> dict:
         """Find candidates for a spoken pickup or dropoff. Read one back before confirming it."""
         try:
             result = await self.client.call(
-                "geocode_address",
-                query=query,
+                "search_places",
+                text=text,
                 market=self.state.default_market,
                 _trace_payload={"address_kind": address_kind},
             )
@@ -152,11 +152,11 @@ class RideBookingAgent(Agent):
             raise _tool_error(exc) from exc
 
     @function_tool()
-    async def verify_otp(self, code: str) -> dict:
+    async def verify_otp(self, otp_code: str) -> dict:
         """Verify the caller's SMS code. Never infer or guess a code."""
         try:
             result = await self.client.call(
-                "verify_otp", phone=self.state.caller_ani, code=code
+                "verify_otp", phone=self.state.caller_ani, otp_code=otp_code
             )
             if result.get("verified"):
                 self.state.auth_level = "otp_verified"

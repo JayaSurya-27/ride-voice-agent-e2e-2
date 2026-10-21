@@ -44,7 +44,7 @@ Never commit `.env.local`.
 
 ## Tools
 
-`geocode_address`, `confirm_address`, `get_ride_options`, `select_ride_option`,
+`search_places`, `confirm_address`, `get_ride_options`, `select_ride_option`,
 `get_payment_methods` (saved cards and Uber Cash balance), `send_otp`, `verify_otp`,
 `select_payment_method`,
 `prepare_booking_confirmation`, `book_ride`, `get_booking_status`,
