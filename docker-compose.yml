@@ -24,6 +24,10 @@ services:
 
   tools-api:
     build: ./tools-api
+    # TOOLS_API_TOKEN comes from .env.local; when set, callers must send it as a bearer token.
+    env_file:
+      - path: .env.local
+        required: false
     environment:
       DATABASE_URL: postgresql://uber:uber@postgres:5432/uber_demo
     ports:
@@ -41,7 +45,7 @@ services:
   agent:
     profiles: ["full"]
     build: .
-    env_file: .env.local
+    env_file: .env.local  # includes TOOLS_API_TOKEN, sent as Authorization: Bearer
     environment:
       # The harness may replace this with its recording proxy, but the default full stack must
       # always stay inside this Compose project rather than calling a host/demo service.

@@ -14,7 +14,7 @@ Cash, or with a saved card once the caller has confirmed an SMS code during the 
 
 ## Required secrets
 
-The agent needs exactly these five secrets and nothing else:
+The agent needs exactly these six secrets and nothing else:
 
 | Variable | Used for |
 |---|---|
@@ -23,11 +23,17 @@ The agent needs exactly these five secrets and nothing else:
 | `LIVEKIT_API_SECRET` | LiveKit Cloud API secret |
 | `DEEPGRAM_API_KEY` | Deepgram speech-to-text and Aura text-to-speech |
 | `GEMINI_API_KEY` | Gemini API language model (no Vertex / Google Cloud credentials) |
+| `TOOLS_API_TOKEN` | Shared bearer token for the tools API |
 
 The agent loads them from `.env.local` (`agent/agent.py` calls
 `load_dotenv(".env.local")`, and the `agent` Compose service uses
 `env_file: .env.local`). Everything else in `.env.example` is a non-secret default.
 Never commit `.env.local`.
+
+When `TOOLS_API_TOKEN` is set, the tools API rejects any request (except
+`/health`) without `Authorization: Bearer <TOOLS_API_TOKEN>` with a 401, and the
+agent's tools client sends that header. Both Compose services read it from
+`.env.local`.
 
 ## What is enforced in code
 

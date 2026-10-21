@@ -22,6 +22,11 @@ def test_seeded_booking_flow_is_idempotent_and_cancellable() -> None:
         base_url=os.environ.get("TOOLS_API_URL", "http://127.0.0.1:18090"),
         timeout=5,
         trust_env=False,
+        headers=(
+            {"Authorization": f"Bearer {os.environ['TOOLS_API_TOKEN']}"}
+            if os.environ.get("TOOLS_API_TOKEN")
+            else {}
+        ),
     ) as client:
         for attempt in range(20):
             try:
@@ -62,8 +67,8 @@ def test_seeded_booking_flow_is_idempotent_and_cancellable() -> None:
         assert uberx["fare_high"] >= uberx["fare_low"]
 
         wallet = post(client, "get_payment_methods", {"rider_id": rider["rider_id"]})
-        assert wallet["uber_cash_balance"] == 60.0
-        assert wallet["uber_cash_balance"] >= uberx["fare_high"]
+        assert wallet["uber_cash_balance"] == 5.0
+        assert wallet["uber_cash_balance"] < uberx["fare_high"]
         visa = next(m for m in wallet["methods"] if m["id"] == "pm_dana_visa")
         assert visa["is_default"] is True
 

@@ -34,6 +34,24 @@ async def test_client_posts_json_and_returns_object() -> None:
 
 
 @pytest.mark.asyncio
+async def test_client_sends_bearer_token_from_env(monkeypatch) -> None:
+    seen: list[str | None] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.headers.get("authorization"))
+        return httpx.Response(200, json={"ok": True})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport, base_url="http://tools") as raw:
+        client = ToolsClient("http://tools", session_id="room-1", client=raw)
+        monkeypatch.delenv("TOOLS_API_TOKEN", raising=False)
+        await client.call("send_otp", phone="+14155550101")
+        monkeypatch.setenv("TOOLS_API_TOKEN", "s3cret")
+        await client.call("send_otp", phone="+14155550101")
+    assert seen == [None, "Bearer s3cret"]
+
+
+@pytest.mark.asyncio
 async def test_client_turns_http_failures_into_safe_tool_error() -> None:
     async def handler(_: httpx.Request) -> httpx.Response:
         return httpx.Response(503, json={"detail": "postgres password leaked here"})

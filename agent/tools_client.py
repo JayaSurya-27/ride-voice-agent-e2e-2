@@ -83,6 +83,13 @@ class ToolsClient:
             # tools proxy remains a fallback when a trace mount is unavailable.
             return
 
+    def _headers(self) -> dict[str, str]:
+        headers = {"x-session-id": self.session_id}
+        token = os.environ.get("TOOLS_API_TOKEN", "").strip()
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers
+
     async def call(
         self,
         endpoint: str,
@@ -101,7 +108,7 @@ class ToolsClient:
             response = await client.post(
                 f"/{endpoint}",
                 json=payload,
-                headers={"x-session-id": self.session_id},
+                headers=self._headers(),
             )
             response.raise_for_status()
             result = response.json()

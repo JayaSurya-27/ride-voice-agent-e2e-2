@@ -8,6 +8,7 @@ utters must trace back to a response from here.
 
 from __future__ import annotations
 
+import hmac
 import math
 import os
 import random
@@ -15,12 +16,24 @@ import uuid
 from datetime import UTC, datetime
 
 import psycopg
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from psycopg.rows import dict_row
 from pydantic import BaseModel, Field
 
 DSN = os.environ.get("DATABASE_URL", "postgresql://uber:uber@postgres:5432/uber_demo")
 app = FastAPI(title="Uber voice agent tools", version="1.0.0")
+
+
+# When TOOLS_API_TOKEN is set, every endpoint except /health needs the bearer token.
+@app.middleware("http")
+async def require_bearer_token(request: Request, call_next):
+    expected = os.environ.get("TOOLS_API_TOKEN", "").strip()
+    if expected and request.url.path != "/health":
+        supplied = request.headers.get("authorization", "")
+        if not hmac.compare_digest(supplied.encode(), f"Bearer {expected}".encode()):
+            return JSONResponse({"detail": "unauthorized"}, status_code=401)
+    return await call_next(request)
 
 DRIVERS = [
     ("Amir", "white Toyota Camry", "8XYZ123"),
