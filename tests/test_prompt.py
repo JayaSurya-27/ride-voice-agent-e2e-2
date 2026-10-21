@@ -18,6 +18,7 @@ def test_prompt_contains_non_negotiable_voice_and_booking_rules() -> None:
         "prepare_booking_confirmation",
         "explicit yes",
         "transfer_to_human",
+        "how many riders and how many large bags",
     ):
         assert required.lower() in prompt.lower()
 
