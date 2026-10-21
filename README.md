@@ -120,6 +120,8 @@ Useful spoken places include “Hilton Union Square,” “SFO International,”
 hundred Market Street,” “Ferry Building,” and “Oakland airport.” “Main Street”
 returns multiple cities on purpose so address disambiguation can be tested.
 
+Known callers can also say "take me home" or "same as last time".
+
 ## Inbound phone setup
 
 Install LiveKit CLI 2.15 or newer and authenticate it:
