@@ -3,7 +3,7 @@
 --   +14155550102 Marcus — known rider, expired card only   -> Uber Cash 65.00;
 --                          active booking UB7F3A2C91 (status / cancel)
 --   +14155550103 Priya  — suspended account            -> must refuse to book
---   +14155550107 Noor   — known rider, valid Mastercard   -> OTP path; Uber Cash 18.40
+--   +14155550107 Noor   — known rider, valid Mastercard   -> OTP path; Uber Cash 22.40
 --   anything else       — unknown number -> no booking, transfer offered
 
 INSERT INTO market_config (market, currency, surge_multiplier, available_products) VALUES
@@ -78,7 +78,7 @@ INSERT INTO payment_methods (id, rider_id, type, brand, last4, is_default, is_va
 
 INSERT INTO wallets (rider_id, uber_cash_balance) VALUES
   ('rdr_dana', 5.00), ('rdr_marcus', 65.00), ('rdr_priya', 0.00), ('rdr_arjun', 0.00),
-  ('rdr_maya', 6.25), ('rdr_jorge', 80.00), ('rdr_noor', 18.40), ('rdr_eli', 3.15), ('rdr_kenji', 0.00);
+  ('rdr_maya', 6.25), ('rdr_jorge', 80.00), ('rdr_noor', 22.40), ('rdr_eli', 3.15), ('rdr_kenji', 0.00);
 
 -- Deterministic per-rider OTPs keep test runs reproducible without making every caller identical.
 INSERT INTO otp_codes (phone, code) VALUES
