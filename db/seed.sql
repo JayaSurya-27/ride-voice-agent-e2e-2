@@ -1,12 +1,13 @@
 -- Seed data. Payment is a saved card (after OTP) or Uber Cash:
---   +14155550101 Dana   — known rider, valid default Visa  -> OTP path; Uber Cash 60.00
+--   +14155550101 Dana   — known rider, valid default Visa  -> OTP path; Uber Cash 5.00
 --   +14155550102 Marcus — known rider, expired card only   -> Uber Cash 65.00;
 --                          active booking UB7F3A2C91 (status / cancel)
 --   +14155550103 Priya  — suspended account            -> must refuse to book
+--   +14155550107 Noor   — known rider, valid Mastercard   -> OTP path; Uber Cash 18.40
 --   anything else       — unknown number -> no booking, transfer offered
 
 INSERT INTO market_config (market, currency, surge_multiplier, available_products) VALUES
-  ('US-SF',  'USD', 1.00, ARRAY['uberx','comfort','uberxl','black','wav']),
+  ('US-SF',  'USD', 1.40, ARRAY['uberx','comfort','uberxl','black','wav']),
   ('US-NYC', 'USD', 1.35, ARRAY['uberx','comfort','uberxl','black']),
   ('IN-BLR', 'INR', 1.00, ARRAY['uberx','uberxl']);
 
@@ -60,6 +61,7 @@ INSERT INTO users (rider_id, phone, first_name, status, phone_verified, rating, 
   ('rdr_arjun',  '+919845550104','Arjun',  'active',    TRUE, 4.7, 'IN-BLR','Bengaluru',     'en'),
   ('rdr_maya',   '+14155550105', 'Maya',   'active',    TRUE, 4.8, 'US-SF', 'San Francisco', 'en'),
   ('rdr_jorge',  '+14155550106', 'Jorge',  'active',    TRUE, 4.7, 'US-SF', 'San Francisco', 'es'),
+  ('rdr_noor',   '+14155550107', 'Noor',   'active',    TRUE, 4.9, 'US-SF', 'San Francisco', 'en'),
   ('rdr_eli',    '+14155550108', 'Eli',    'active',    TRUE, 4.5, 'US-SF', 'Oakland',       'en'),
   ('rdr_kenji',  '+14155550109', 'Kenji',  'active',    TRUE, 4.9, 'US-SF', 'San Francisco', 'ja');
 
@@ -70,17 +72,18 @@ INSERT INTO payment_methods (id, rider_id, type, brand, last4, is_default, is_va
   ('pm_priya_visa',  'rdr_priya',  'card', 'Visa',       '1111', TRUE,  TRUE,  FALSE),
   ('pm_maya_visa',   'rdr_maya',   'card', 'Visa',       '7308', TRUE,  TRUE,  FALSE),
   ('pm_jorge_visa',  'rdr_jorge',  'card', 'Visa',       '1486', TRUE,  TRUE,  FALSE),
+  ('pm_noor_mc',     'rdr_noor',   'card', 'Mastercard', '6029', TRUE,  TRUE,  FALSE),
   ('pm_eli_amex',    'rdr_eli',    'card', 'Amex',       '3107', TRUE,  TRUE,  FALSE),
   ('pm_kenji_visa',  'rdr_kenji',  'card', 'Visa',       '8831', TRUE,  TRUE,  FALSE);
 
 INSERT INTO wallets (rider_id, uber_cash_balance) VALUES
-  ('rdr_dana', 60.00), ('rdr_marcus', 65.00), ('rdr_priya', 0.00), ('rdr_arjun', 0.00),
-  ('rdr_maya', 6.25), ('rdr_jorge', 80.00), ('rdr_eli', 3.15), ('rdr_kenji', 0.00);
+  ('rdr_dana', 5.00), ('rdr_marcus', 65.00), ('rdr_priya', 0.00), ('rdr_arjun', 0.00),
+  ('rdr_maya', 6.25), ('rdr_jorge', 80.00), ('rdr_noor', 18.40), ('rdr_eli', 3.15), ('rdr_kenji', 0.00);
 
 -- Deterministic per-rider OTPs keep test runs reproducible without making every caller identical.
 INSERT INTO otp_codes (phone, code) VALUES
   ('+14155550101', '638204'), ('+14155550102', '817463'), ('+14155550103', '264819'),
-  ('+14155550105', '804271'), ('+14155550106', '349175'),
+  ('+14155550105', '804271'), ('+14155550106', '349175'), ('+14155550107', '592804'),
   ('+14155550108', '417936'), ('+14155550109', '731905'), ('+919845550104', '286413');
 
 -- Marcus already has a matched ride, so "where's my driver" and cancel can be tested.
