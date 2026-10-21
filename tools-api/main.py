@@ -35,6 +35,7 @@ async def require_bearer_token(request: Request, call_next):
             return JSONResponse({"detail": "unauthorized"}, status_code=401)
     return await call_next(request)
 
+
 DRIVERS = [
     ("Amir", "white Toyota Camry", "8XYZ123"),
     ("Lena", "silver Honda Accord", "7KTR904"),
@@ -150,6 +151,36 @@ def verify_otp(body: OtpIn) -> dict:
 
 
 # ------------------------------------------------------------------ places
+
+
+class RiderIn(BaseModel):
+    rider_id: str
+    limit: int = Field(default=3, ge=1, le=10)
+
+
+@app.post("/get_saved_places")
+def get_saved_places(body: RiderIn) -> dict:
+    rows = many(
+        "SELECT label, place_id, formatted_address, lat, lng FROM saved_places"
+        " WHERE rider_id = %s ORDER BY label",
+        (body.rider_id,),
+    )
+    for r in rows:
+        r["lat"], r["lng"] = _f(r["lat"]), _f(r["lng"])
+    return {"places": rows}
+
+
+@app.post("/get_recent_dropoffs")
+def get_recent_dropoffs(body: RiderIn) -> dict:
+    rows = many(
+        "SELECT dropoff_place_id AS place_id, dropoff_formatted_address AS"
+        " formatted_address, taken_at FROM trips WHERE rider_id = %s"
+        " ORDER BY taken_at DESC LIMIT %s",
+        (body.rider_id, body.limit),
+    )
+    for r in rows:
+        r["when"] = r.pop("taken_at").isoformat()
+    return {"trips": rows}
 
 
 class SearchPlacesIn(BaseModel):
@@ -276,10 +307,6 @@ def get_ride_options(body: RideOptionsIn) -> dict:
 
 
 # ----------------------------------------------------------------- payment
-
-
-class RiderIn(BaseModel):
-    rider_id: str
 
 
 @app.post("/get_payment_methods")

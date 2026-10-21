@@ -1,7 +1,7 @@
 -- Uber ride-booking voice agent — schema mirrors §3a of the prompt package.
 -- Every fare/ETA/availability the agent speaks must come from here via a tool.
 
-DROP TABLE IF EXISTS bookings, otp_codes, wallets, payment_methods, users, products,
+DROP TABLE IF EXISTS bookings, otp_codes, trips, saved_places, wallets, payment_methods, users, products,
     market_config, places CASCADE;
 
 -- §3a users
@@ -35,6 +35,26 @@ CREATE TABLE payment_methods (
 CREATE TABLE wallets (
     rider_id          TEXT PRIMARY KEY REFERENCES users(rider_id) ON DELETE CASCADE,
     uber_cash_balance NUMERIC(10,2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE saved_places (
+    id                TEXT PRIMARY KEY,
+    rider_id          TEXT NOT NULL REFERENCES users(rider_id) ON DELETE CASCADE,
+    label             TEXT NOT NULL,   -- home|work|custom label
+    place_id          TEXT NOT NULL,
+    formatted_address TEXT NOT NULL,
+    lat               NUMERIC(9,6),
+    lng               NUMERIC(9,6)
+);
+
+CREATE TABLE trips (
+    trip_id                    TEXT PRIMARY KEY,
+    rider_id                   TEXT NOT NULL REFERENCES users(rider_id) ON DELETE CASCADE,
+    dropoff_place_id           TEXT NOT NULL,
+    dropoff_formatted_address  TEXT NOT NULL,
+    taken_at                   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    fare_total                 NUMERIC(10,2),
+    status                     TEXT NOT NULL DEFAULT 'completed'
 );
 
 -- Geocoding source. search_places() searches formatted_address + aliases,
@@ -99,4 +119,6 @@ CREATE TABLE otp_codes (
     issued_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX ON saved_places (rider_id);
+CREATE INDEX ON trips (rider_id, taken_at DESC);
 CREATE INDEX ON payment_methods (rider_id);

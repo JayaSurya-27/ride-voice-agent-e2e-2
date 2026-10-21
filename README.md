@@ -9,7 +9,8 @@ Postgres database all run on your machine. LiveKit Cloud remains the media and S
 control plane, and Deepgram plus Gemini remain model providers.
 
 This version books new rides, checks a booked ride's status ("where's my driver"),
-and cancels a ride after stating the cancellation fee. A ride is paid with Uber
+and cancels a ride after stating the cancellation fee. Known callers can say "take
+me home" (saved places) or "same as last time" (recent trips). A ride is paid with Uber
 Cash, or with a saved card once the caller has confirmed an SMS code during the call.
 
 ## Required secrets
@@ -50,7 +51,7 @@ agent's tools client sends that header. Both Compose services read it from
 
 ## Tools
 
-`search_places`, `confirm_address`, `get_ride_options`, `select_ride_option`,
+`get_saved_places`, `get_recent_dropoffs`, `search_places`, `confirm_address`, `get_ride_options`, `select_ride_option`,
 `get_payment_methods` (saved cards and Uber Cash balance), `send_otp`, `verify_otp`,
 `select_payment_method`,
 `prepare_booking_confirmation`, `book_ride`, `get_booking_status`,
@@ -108,10 +109,11 @@ API key, and a Gemini API key.
 
 | Caller | Expected path |
 |---|---|
-| `+14155550101` Dana | Valid saved Visa; OTP required. Uber Cash 60.00 |
+| `+14155550101` Dana | Valid saved Visa; OTP required. Uber Cash 5.00. Saved Home/Work; recent trips to SFO and the Ferry Building |
 | `+14155550102` Marcus | Expired card; Uber Cash 65.00 can cover many trips. Active ride `UB7F3A2C91` (driver Lena) for status and cancel; fee 5.00 |
 | `+14155550103` Priya | Suspended; booking rejected and human handoff offered |
 | `+14155550105` Maya | Uber Cash 6.25; balance too low for most trips |
+| `+14155550107` Noor | Valid saved Mastercard; OTP required. Uber Cash 22.40. Saved Home/Work |
 | Any other number | No account; no booking, transfer offered |
 
 Useful spoken places include “Hilton Union Square,” “SFO International,” “two

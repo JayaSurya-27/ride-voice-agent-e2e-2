@@ -108,6 +108,13 @@ def test_seeded_booking_flow_is_idempotent_and_cancellable() -> None:
         )
         assert unsupported.status_code == 422
 
+        places = post(client, "get_saved_places", {"rider_id": rider["rider_id"]})
+        assert [p["label"] for p in places["places"]] == ["home", "work"]
+        recent = post(
+            client, "get_recent_dropoffs", {"rider_id": rider["rider_id"], "limit": 3}
+        )
+        assert recent["trips"][0]["place_id"] == "plc_sfo_intl"
+
         cancellation = post(
             client,
             "get_cancellation_quote",

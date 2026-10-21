@@ -19,6 +19,7 @@ def test_prompt_contains_non_negotiable_voice_and_booking_rules() -> None:
         "explicit yes",
         "transfer_to_human",
         "search_places",
+        "get_recent_dropoffs",
         "how many riders and how many large bags",
         "where's my driver",
         "disclose any cancellation fee before cancelling",
@@ -29,6 +30,8 @@ def test_prompt_contains_non_negotiable_voice_and_booking_rules() -> None:
 def test_prompt_does_not_expose_unknown_saved_data() -> None:
     prompt = build_instructions({"caller_ani": "+19995550123"})
     assert "Account on file: no" in prompt
+    assert "Saved places: unavailable" in prompt
+    assert "Default payment: unavailable" in prompt
     assert "Name: unknown" in prompt
     assert "Account on file: yes" not in prompt
 

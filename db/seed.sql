@@ -45,6 +45,10 @@ INSERT INTO places (place_id, formatted_address, city, market, lat, lng, aliases
      ARRAY['mission dolores','dolores park','mission dolores park']),
   ('plc_ucsf_parnassus', 'UCSF Medical Center, 505 Parnassus Avenue, San Francisco, CA', 'San Francisco', 'US-SF', 37.763100, -122.458600,
      ARRAY['ucsf parnassus','ucsf medical center','505 parnassus']),
+  ('plc_noor_home', '88 King Street, San Francisco, CA', 'San Francisco', 'US-SF', 37.779200, -122.389100,
+     ARRAY['88 king','king street','noor home']),
+  ('plc_noor_work', 'Salesforce Tower, 415 Mission Street, San Francisco, CA', 'San Francisco', 'US-SF', 37.789700, -122.396000,
+     ARRAY['salesforce tower','415 mission','noor work']),
   ('plc_caltrain', 'San Francisco Caltrain Station, 700 4th Street, San Francisco, CA', 'San Francisco', 'US-SF', 37.776400, -122.394300,
      ARRAY['caltrain','fourth and king','4th and king','700 fourth street']),
   ('plc_chase_center', 'Chase Center, 1 Warriors Way, San Francisco, CA', 'San Francisco', 'US-SF', 37.768000, -122.387700,
@@ -79,6 +83,18 @@ INSERT INTO payment_methods (id, rider_id, type, brand, last4, is_default, is_va
 INSERT INTO wallets (rider_id, uber_cash_balance) VALUES
   ('rdr_dana', 5.00), ('rdr_marcus', 65.00), ('rdr_priya', 0.00), ('rdr_arjun', 0.00),
   ('rdr_maya', 6.25), ('rdr_jorge', 80.00), ('rdr_noor', 22.40), ('rdr_eli', 3.15), ('rdr_kenji', 0.00);
+
+INSERT INTO saved_places (id, rider_id, label, place_id, formatted_address, lat, lng) VALUES
+  ('sp_dana_home', 'rdr_dana', 'home', 'plc_home_dana', '1200 Guerrero Street, San Francisco, CA', 37.751900, -122.422600),
+  ('sp_dana_work', 'rdr_dana', 'work', 'plc_work_dana', '1455 Market Street, San Francisco, CA', 37.775600, -122.417100),
+  ('sp_noor_home', 'rdr_noor', 'home', 'plc_noor_home', '88 King Street, San Francisco, CA', 37.779200, -122.389100),
+  ('sp_noor_work', 'rdr_noor', 'work', 'plc_noor_work', 'Salesforce Tower, 415 Mission Street, San Francisco, CA', 37.789700, -122.396000);
+
+INSERT INTO trips (trip_id, rider_id, dropoff_place_id, dropoff_formatted_address, taken_at, fare_total) VALUES
+  ('trp_1', 'rdr_dana',   'plc_sfo_intl',   'SFO International Terminal, San Francisco, CA', now() - interval '3 days', 48.20),
+  ('trp_2', 'rdr_dana',   'plc_ferry_bldg', 'Ferry Building, San Francisco, CA',             now() - interval '9 days', 14.75),
+  ('trp_3', 'rdr_marcus', 'plc_200_market', '200 Market Street, San Francisco, CA',          now() - interval '2 days', 19.10),
+  ('trp_eli_1', 'rdr_eli', 'plc_chase_center', 'Chase Center, 1 Warriors Way, San Francisco, CA', now() - interval '2 days', 22.60);
 
 -- Deterministic per-rider OTPs keep test runs reproducible without making every caller identical.
 INSERT INTO otp_codes (phone, code) VALUES

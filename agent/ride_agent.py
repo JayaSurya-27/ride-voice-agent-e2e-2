@@ -54,6 +54,28 @@ class RideBookingAgent(Agent):
         )
 
     @function_tool()
+    async def get_saved_places(self) -> dict:
+        """Get saved place labels for a recognized caller; never use for guests."""
+        if self.state.auth_level == "anonymous" or not self.state.rider_id:
+            raise ToolError("Saved places are unavailable for an unrecognized caller.")
+        try:
+            return await self.client.call("get_saved_places", rider_id=self.state.rider_id)
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
+    async def get_recent_dropoffs(self, limit: int = 3) -> dict:
+        """Get recent destinations for a recognized caller, up to three."""
+        if self.state.auth_level == "anonymous" or not self.state.rider_id:
+            raise ToolError("Recent trips are unavailable for an unrecognized caller.")
+        try:
+            return await self.client.call(
+                "get_recent_dropoffs", rider_id=self.state.rider_id, limit=min(limit, 3)
+            )
+        except Exception as exc:
+            raise _tool_error(exc) from exc
+
+    @function_tool()
     async def search_places(
         self, text: str, address_kind: Literal["pickup", "dropoff"]
     ) -> dict:

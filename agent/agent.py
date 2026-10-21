@@ -37,7 +37,34 @@ _LOCAL_STATE_TOOLS = {
 async def load_caller_context(client: ToolsClient, state: BookingState) -> dict:
     identity = await client.call("lookup_rider_by_phone", phone=state.caller_ani)
     state.set_identity(identity)
-    return {**identity, "caller_ani": state.caller_ani}
+    context = {**identity, "caller_ani": state.caller_ani}
+    if not state.rider_id:
+        return context
+
+    # The generated world owns scenario state. Eagerly fetching places and
+    # payment methods here would be recorded as agent actions before the caller
+    # has asked for anything, so hydrate only identity and let conversational
+    # tools retrieve the rest when they are actually needed.
+    if client.harness_mode:
+        return context
+
+    places = await client.call("get_saved_places", rider_id=state.rider_id)
+    payments = await client.call("get_payment_methods", rider_id=state.rider_id)
+    state.payment_methods = payments.get("methods", [])
+    state.uber_cash_balance = float(payments.get("uber_cash_balance", 0))
+    labels = [p.get("label", "place") for p in places.get("places", [])]
+    default = next((m for m in state.payment_methods if m.get("is_default")), None)
+    context.update(
+        saved_places_summary=", ".join(labels) or "none",
+        default_payment_summary=(
+            f"{default.get('brand', default.get('type', 'card'))} ending "
+            f"{default.get('last4', 'unknown')}"
+            if default
+            else "none"
+        ),
+        uber_cash_summary=f"{state.uber_cash_balance:.2f}",
+    )
+    return context
 
 
 server = AgentServer()
