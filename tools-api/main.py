@@ -95,6 +95,7 @@ def lookup_rider_by_phone(body: PhoneIn) -> dict:
     }
 
 
+# Sends a fresh code; a resend resets the attempt count.
 @app.post("/send_otp")
 def send_otp(body: PhoneIn) -> dict:
     exists = one("SELECT 1 FROM otp_codes WHERE phone = %s", (body.phone,))
@@ -112,6 +113,7 @@ def send_otp(body: PhoneIn) -> dict:
     return {"otp_sent": True, "channel": "sms"}
 
 
+# Three wrong codes lock the code until a new one is sent.
 @app.post("/verify_otp")
 def verify_otp(body: OtpIn) -> dict:
     row = one("SELECT * FROM otp_codes WHERE phone = %s", (body.phone,))
@@ -135,6 +137,7 @@ class GeocodeIn(BaseModel):
     market: str | None = None
 
 
+# Matches a spoken address against the seeded places only.
 @app.post("/geocode_address")
 def geocode_address(body: GeocodeIn) -> dict:
     """Return ranked candidates. Deliberately returns >1 for ambiguous input

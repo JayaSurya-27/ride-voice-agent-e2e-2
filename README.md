@@ -8,8 +8,8 @@ The application code, prompt, transactional state, tools API, fares, rider data 
 Postgres database all run on your machine. LiveKit Cloud remains the media and SIP
 control plane, and Deepgram plus Gemini remain model providers.
 
-This version books new rides only. Payment is a saved card, after an SMS code is
-verified in the call, or Uber Cash.
+This version books new rides only. A ride is paid with Uber Cash, or with a saved
+card once the caller has confirmed an SMS code during the call.
 
 ## Required secrets
 

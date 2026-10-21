@@ -26,6 +26,7 @@ def test_prompt_does_not_expose_unknown_saved_data() -> None:
     prompt = build_instructions({"caller_ani": "+19995550123"})
     assert "Account on file: no" in prompt
     assert "Name: unknown" in prompt
+    assert "Account on file: yes" not in prompt
 
 
 def test_prompt_requires_sequential_function_calls_for_gemini() -> None:
