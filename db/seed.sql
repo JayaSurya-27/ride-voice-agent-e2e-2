@@ -108,3 +108,7 @@ INSERT INTO bookings (booking_ref, rider_id, pickup_place_id, dropoff_place_id, 
     eta_pickup_min, cancellation_fee) VALUES
   ('UB7F3A2C91', 'rdr_marcus', 'plc_200_market', 'plc_sfo_intl', 'uberx', 'uber_cash',
    38.00, 46.00, 'matched', 'Lena', 'silver Honda Accord', '7KTR904', 6, 5.00);
+
+-- Dana reported a lost umbrella after her last trip.
+INSERT INTO lost_item_reports (report_id, rider_id, item, status) VALUES
+  (9007199254740993, 'rdr_dana', 'black umbrella', 'open');

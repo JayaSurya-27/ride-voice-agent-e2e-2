@@ -119,6 +119,14 @@ CREATE TABLE otp_codes (
     issued_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Lost-item reports; ids come from the support system's 64-bit counter.
+CREATE TABLE lost_item_reports (
+    report_id BIGINT PRIMARY KEY,
+    rider_id  TEXT NOT NULL REFERENCES users(rider_id) ON DELETE CASCADE,
+    item      TEXT NOT NULL,
+    status    TEXT NOT NULL DEFAULT 'open'
+);
+
 CREATE INDEX ON saved_places (rider_id);
 CREATE INDEX ON trips (rider_id, taken_at DESC);
 CREATE INDEX ON payment_methods (rider_id);
