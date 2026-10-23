@@ -81,7 +81,7 @@ INSERT INTO payment_methods (id, rider_id, type, brand, last4, is_default, is_va
   ('pm_kenji_visa',  'rdr_kenji',  'card', 'Visa',       '8831', TRUE,  TRUE,  FALSE);
 
 INSERT INTO wallets (rider_id, uber_cash_balance) VALUES
-  ('rdr_dana', 5.00), ('rdr_marcus', 65.00), ('rdr_priya', 0.00), ('rdr_arjun', 0.00),
+  ('rdr_dana', 5.00), ('rdr_marcus', 66.50), ('rdr_priya', 0.00), ('rdr_arjun', 0.00),
   ('rdr_maya', 6.25), ('rdr_jorge', 80.00), ('rdr_noor', 22.40), ('rdr_eli', 3.15), ('rdr_kenji', 0.00);
 
 INSERT INTO saved_places (id, rider_id, label, place_id, formatted_address, lat, lng) VALUES
